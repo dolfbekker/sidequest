@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Side Quest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: #0a0a0f;
+  overflow: hidden;
+  font-family: 'Cinzel', serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#app {
+  width: 100vw; height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  position: relative;
+}
+
+.stars { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.star {
+  position: absolute; background: #fff; border-radius: 50%;
+  animation: twinkle var(--d) ease-in-out infinite alternate;
+  opacity: var(--o);
+}
+@keyframes twinkle { from { opacity: var(--o); } to { opacity: calc(var(--o) * 0.2); } }
+
+.screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  transition: opacity 0.45s;
+  padding: 1.5rem;
+}
+.screen.off { opacity: 0; pointer-events: none; }
+.screen.on  { opacity: 1; pointer-events: all; }
+
+#screen-title { gap: 1rem; }
+.title-swords { font-size: clamp(28px, 5vw, 52px); color: #e8c97a; opacity: 0.7; }
+.title-main {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(36px, 7vw, 96px);
+  color: #e8c97a; letter-spacing: 0.12em;
+  text-align: center; line-height: 1;
+}
+.title-divider { width: 180px; height: 1px; background: linear-gradient(to right, transparent, #e8c97a55, transparent); }
+.title-sub {
+  font-size: clamp(10px, 2vw, 18px); color: #9a8a6a;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  text-align: center;
+}
+.btn-primary {
+  margin-top: 0.5rem;
+  font-family: 'Cinzel', serif;
+  font-size: clamp(13px, 2.5vw, 18px);
+  letter-spacing: 0.18em;
+  padding: 14px 44px;
+  background: transparent; color: #e8c97a;
+  border: 1px solid #e8c97a66; border-radius: 4px;
+  cursor: pointer; touch-action: manipulation;
+  transition: background 0.2s, border-color 0.2s;
+}
+.btn-primary:hover, .btn-primary:active { background: rgba(232,201,122,0.1); border-color: #e8c97a; }
+
+#screen-spin { gap: 0; }
+.reel-outer {
+  width: min(88vw, 680px);
+  overflow: hidden; position: relative;
+}
+.reel-fade-top, .reel-fade-bot {
+  position: absolute; left: 0; right: 0; height: 32%;
+  pointer-events: none; z-index: 2;
+}
+.reel-fade-top { top: 0; background: linear-gradient(to bottom, #0a0a0f, transparent); }
+.reel-fade-bot { bottom: 0; background: linear-gradient(to top, #0a0a0f, transparent); }
+.reel-highlight {
+  position: absolute; left: 0; right: 0;
+  top: 50%; transform: translateY(-50%);
+  height: var(--slot-h);
+  border-top: 1px solid #e8c97a55;
+  border-bottom: 1px solid #e8c97a55;
+  pointer-events: none; z-index: 3;
+}
+#reel-track {
+  display: flex; flex-direction: column;
+  align-items: center; will-change: transform;
+}
+.reel-item {
+  width: 100%; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 0 1.5rem;
+  overflow: hidden;
+}
+.reel-icon  { line-height: 1; flex-shrink: 0; }
+.reel-name  {
+  font-family: 'Cinzel', serif; font-weight: 700;
+  color: #f0e4b8; letter-spacing: 0.04em; line-height: 1.3;
+  flex-shrink: 0;
+}
+
+#screen-result { gap: 1.2rem; cursor: pointer; }
+.result-eyebrow { font-size: clamp(10px, 1.5vw, 13px); letter-spacing: 0.3em; color: #9a8a6a; text-transform: uppercase; }
+.result-icon { animation: popIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275) both; font-size: clamp(52px, 10vw, 100px); }
+@keyframes popIn { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.result-name {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(22px, 4.5vw, 64px);
+  color: #e8c97a; letter-spacing: 0.07em;
+  line-height: 1.25; text-align: center;
+  padding: 0 1rem;
+  animation: rise 0.65s ease-out both; animation-delay: 0.15s;
+}
+@keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+.result-divider { width: 140px; height: 1px; background: linear-gradient(to right, transparent, #e8c97a66, transparent); animation: rise 0.5s ease-out both; animation-delay: 0.3s; }
+.btn-again-wrap { animation: rise 0.5s ease-out both; animation-delay: 0.5s; }
+.btn-again {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(12px, 2.5vw, 15px);
+  letter-spacing: 0.15em; padding: 13px 36px;
+  background: #e8c97a; color: #0a0a0f;
+  border: none; border-radius: 3px;
+  cursor: pointer; touch-action: manipulation;
+  transition: background 0.15s;
+}
+.btn-again:hover, .btn-again:active { background: #f0d88a; }
+
+@media (max-width: 480px) {
+  #screen-title { gap: 0.75rem; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="stars" id="stars"></div>
+
+  <div id="screen-title" class="screen on">
+    <div class="title-swords">⚔</div>
+    <div class="title-main">Side Quest</div>
+    <div class="title-divider"></div>
+    <div class="title-sub">Blending the Mundane with the Marvellous</div>
+    <button class="btn-primary" id="btn-start" type="button">SPIN THE WHEEL</button>
+  </div>
+
+  <div id="screen-spin" class="screen off">
+    <div class="reel-outer" id="reel-outer">
+      <div class="reel-fade-top"></div>
+      <div class="reel-fade-bot"></div>
+      <div class="reel-highlight" id="reel-highlight"></div>
+      <div id="reel-track"></div>
+    </div>
+  </div>
+
+  <div id="screen-result" class="screen off" id="screen-result">
+    <div class="result-eyebrow">Your world awaits</div>
+    <div class="result-icon" id="result-icon"></div>
+    <div class="result-name" id="result-name"></div>
+    <div class="result-divider"></div>
+    <div class="btn-again-wrap">
+      <button class="btn-again" id="btn-again" type="button">SPIN AGAIN</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const WORLDS = [
+  { name: "Dystopian Orwellian Future",      icon: "🏭" },
+  { name: "Victorian High Society",           icon: "🎩" },
+  { name: "A Dragon's Treasure Hoard",        icon: "🐉" },
+  { name: "The Jurassic Age",                 icon: "🦕" },
+  { name: "Bladerunning Cyberpunk",           icon: "🤖" },
+  { name: "Vampires, Werewolves & Monsters",  icon: "🧛" },
+  { name: "Under The Sea",                    icon: "🐙" },
+  { name: "Post-Apocalyptic Wasteland",       icon: "☢️" },
+  { name: "Lost in Space Odyssey",            icon: "🚀" },
+  { name: "Battle of the Four Kingdoms",      icon: "⚔️" },
+  { name: "Whimsical Magical Forest",         icon: "🧚" },
+  { name: "Santa's Workshop",                 icon: "🎅" },
+  { name: "Pirates, Sailors & Swashbucklers", icon: "🏴‍☠️" },
+  { name: "Weird Wild West",                  icon: "🤠" },
+  { name: "Robots vs Aliens",                 icon: "👾" },
+  { name: "Wizards 'n Witches",               icon: "🧙" },
+  { name: "Grimm Fairy Tale",                 icon: "👸" },
+  { name: "Olympian Gods & Heroes",           icon: "🔱" },
+  { name: "Norse Gods of Asgard",             icon: "🔨" },
+  { name: "Mobsters of Film Noir",            icon: "🎬" },
+];
+
+(function makeStars() {
+  const s = document.getElementById('stars');
+  for (let i = 0; i < 120; i++) {
+    const el = document.createElement('div');
+    el.className = 'star';
+    const size = Math.random() * 2.5 + 0.5;
+    el.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--o:${(Math.random()*0.7+0.1).toFixed(2)};--d:${(Math.random()*3+1.5).toFixed(1)}s;animation-delay:${(Math.random()*4).toFixed(1)}s;`;
+    s.appendChild(el);
+  }
+})();
+
+let audioCtx = null;
+function getCtx() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+const PENTATONIC = [261.63,293.66,329.63,392.00,440.00,523.25,587.33,659.25,783.99,880.00];
+
+function playChip(freq, dur, vol, when) {
+  try {
+    const ctx = getCtx(); if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0.001, when);
+    g.gain.linearRampToValueAtTime(vol, when + 0.005);
+    g.gain.linearRampToValueAtTime(0.001, when + dur);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(when); osc.stop(when + dur + 0.01);
+  } catch(e) {}
+}
+
+let tickTimer = null;
+let tickStep = 0;
+let tickSlow = false;
+
+function startTicks() {
+  stopTicks();
+  tickStep = 0; tickSlow = false;
+  function fire() {
+    const ctx = getCtx(); if (!ctx) return;
+    const freq = PENTATONIC[tickStep % PENTATONIC.length];
+    playChip(freq, 0.07, 0.18, ctx.currentTime);
+    tickStep++;
+    tickTimer = setTimeout(fire, 60);
+  }
+  fire();
+}
+
+function slowTicks() {
+  stopTicks();
+  if (tickSlow) return;
+  tickSlow = true;
+  let step = 0;
+  const scale = [392,440,493.88,523.25,587.33,659.25];
+  let interval = 90;
+  function fire() {
+    const ctx = getCtx(); if (!ctx) return;
+    playChip(scale[step % scale.length], 0.055, 0.14, ctx.currentTime);
+    step++;
+    interval = Math.min(interval + 28, 420);
+    if (interval < 420) tickTimer = setTimeout(fire, interval);
+  }
+  fire();
+}
+
+function stopTicks() {
+  if (tickTimer) { clearTimeout(tickTimer); tickTimer = null; }
+}
+
+function playTadaa() {
+  try {
+    const ctx = getCtx(); if (!ctx) return;
+    const now = ctx.currentTime;
+    [[523.25,659.25,783.99],[587.33,739.99,880],[659.25,830.61,1046.5]].forEach((chord,ci) => {
+      chord.forEach((freq,fi) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        const f = ctx.createBiquadFilter();
+        const t = now + ci*0.18;
+        const dur = ci < 2 ? 0.22 : 0.9;
+        osc.type = fi === 0 ? 'sawtooth' : 'square';
+        osc.frequency.value = freq;
+        f.type = 'lowpass'; f.frequency.value = 2200;
+        g.gain.setValueAtTime(0.001,t);
+        g.gain.linearRampToValueAtTime(0.13,t+0.02);
+        g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+        osc.connect(f); f.connect(g); g.connect(ctx.destination);
+        osc.start(t); osc.stop(t+dur+0.05);
+      });
+    });
+    [2093,2637,3136].forEach((freq,i) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      const t = now + 0.36 + i*0.06;
+      osc.type = 'sine'; osc.frequency.value = freq;
+      g.gain.setValueAtTime(0.07,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.4);
+      osc.connect(g); g.connect(ctx.destination);
+      osc.start(t); osc.stop(t+0.45);
+    });
+  } catch(e) {}
+}
+
+function easeOutQuart(t) { return 1 - Math.pow(1-t,4); }
+
+const SLOT_H_VH = 20;
+function slotH() { return Math.round(window.innerHeight * SLOT_H_VH / 100); }
+
+function buildReel(items) {
+  const track = document.getElementById('reel-track');
+  track.innerHTML = '';
+  const h = slotH();
+  const iconSize = Math.round(h * 0.32);
+  const nameSize = Math.round(h * 0.2);
+  document.getElementById('reel-highlight').style.setProperty('--slot-h', h + 'px');
+  document.getElementById('reel-outer').style.height = (h * 5) + 'px';
+  items.forEach(w => {
+    const div = document.createElement('div');
+    div.className = 'reel-item';
+    div.style.height = h + 'px';
+    div.innerHTML = `<div class="reel-icon" style="font-size:${iconSize}px;margin-bottom:${Math.round(h*0.04)}px">${w.icon}</div><div class="reel-name" style="font-size:${nameSize}px">${w.name}</div>`;
+    track.appendChild(div);
+  });
+  track.style.transform = 'translateY(0)';
+  return track;
+}
+
+let deck = [];
+function nextFromDeck() {
+  if (deck.length === 0) deck = WORLDS.map((_,i)=>i).sort(()=>Math.random()-0.5);
+  return deck.shift();
+}
+
+let spinning = false;
+
+function showScreen(id) {
+  ['screen-title','screen-spin','screen-result'].forEach(s => {
+    const el = document.getElementById(s);
+    el.classList.toggle('on',  s === id);
+    el.classList.toggle('off', s !== id);
+  });
+}
+
+function doSpin(targetIndex) {
+  if (spinning) return;
+  spinning = true;
+  getCtx();
+  showScreen('screen-spin');
+
+  const shuffled = [...WORLDS].sort(()=>Math.random()-0.5);
+  const items = [...shuffled, ...shuffled, ...shuffled, WORLDS[targetIndex]];
+  const track = buildReel(items);
+  const h = slotH();
+  const dest = -((items.length - 1) * h) + (h * 2);
+  const duration = 3800;
+  const t0 = performance.now();
+
+  startTicks();
+  let slowed = false;
+
+  function frame(now) {
+    const t = Math.min((now - t0) / duration, 1);
+    const y = dest * easeOutQuart(t);
+    track.style.transform = `translateY(${y}px)`;
+    if (t > 0.55 && !slowed) { slowed = true; slowTicks(); }
+    if (t < 1) { requestAnimationFrame(frame); return; }
+    stopTicks();
+    setTimeout(() => {
+      playTadaa();
+      const w = WORLDS[targetIndex];
+      const ri = document.getElementById('result-icon');
+      const rn = document.getElementById('result-name');
+      ri.textContent = w.icon;
+      rn.textContent = w.name;
+      ri.style.animation = 'none'; rn.style.animation = 'none';
+      void ri.offsetWidth;
+      ri.style.animation = ''; rn.style.animation = '';
+      showScreen('screen-result');
+      spinning = false;
+    }, 220);
+  }
+  requestAnimationFrame(frame);
+}
+
+document.getElementById('btn-start').addEventListener('click', function(e) {
+  e.stopPropagation();
+  doSpin(nextFromDeck());
+});
+
+document.getElementById('btn-again').addEventListener('click', function(e) {
+  e.stopPropagation();
+  doSpin(nextFromDeck());
+});
+
+
+window.addEventListener('keydown', function(e) {
+  if (e.code === 'Space' || e.code === 'Enter') {
+    e.preventDefault();
+    const on = document.querySelector('.screen.on');
+    if (on && on.id !== 'screen-spin') doSpin(nextFromDeck());
+  }
+});
+</script>
+</body>
+</html>
